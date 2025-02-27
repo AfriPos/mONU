@@ -15,9 +15,22 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
+
+        // add credit record
+        \App\Models\Credit::create([
+            'organization_id' => '67be14c8-411c',
+            'balance' => 0,
+        ]);
+
+        // add routermodel seeder
+        $this->call([
+            RouterModelSeeder::class,
+            RouterConfigurationSeeder::class,
+            RolesAndPermissionsSeeder::class,
         ]);
     }
 }
