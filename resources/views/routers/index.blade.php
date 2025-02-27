@@ -63,7 +63,9 @@
                                         <div class="text-sm text-gray-900">{{ $router->serial_number }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $router->mac_batch }}</div>
+                                        <div class="text-sm text-gray-900">
+                                            {{ \App\Models\MacAddress::where('batchid', $router->mac_batch)->where('assigned', true)->first()?->mac_address ?? 'No MAC assigned' }}
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">{{ $router->user->name }}</div>
