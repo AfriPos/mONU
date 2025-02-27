@@ -115,7 +115,6 @@ class macPrefixesController extends Controller
     /**
      * Get base MAC
      */
-
     public function getBaseMac(Request $request)
     {
         try {
@@ -135,100 +134,27 @@ class macPrefixesController extends Controller
 
             $prefix = strtoupper($request->prefix);
 
-            DB::beginTransaction();
-            try {
-                // **Step 1: Lock the batch search to prevent race conditions**
-                $unassignedBatchId = DB::table('mac_addresses')
-                    ->select('batchid')
-                    ->where('mac_address', 'LIKE', "$prefix%")
-                    ->where('assigned', false)
-                    ->groupBy('batchid')
-                    ->havingRaw('COUNT(*) = 8')
-                    ->lockForUpdate() // This prevents other transactions from modifying this batch
-                    ->value('batchid');
+            // Ensure unique MACs before proceeding
+            do {
+                // Generate random starting MAC
+                $startMac = $this->generateRandomMac($prefix);
 
-                if ($unassignedBatchId) {
-                    $firstMac = MacAddress::where('batchid', $unassignedBatchId)
-                        ->orderBy('mac_address', 'asc')
-                        ->first();
-
-                    DB::commit();
-                    return response()->json([
-                        'base_mac' => $firstMac->mac_address,
-                        'batch_id' => $unassignedBatchId,
-                    ], 200);
-                }
-
-                // **Step 2: If no unassigned batch, generate a new one**
-                $lastMac = MacAddress::where('mac_address', 'LIKE', "$prefix%")
-                    ->orderBy('mac_address', 'desc')
-                    ->first();
-
-                $startMac = $lastMac ? $this->incrementMac($lastMac->mac_address) : "$prefix:00:00:00";
-
+                // Generate a batch of 8 MACs
                 $macAddresses = $this->generateSequentialMacs($startMac, 8);
-                if (empty($macAddresses)) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'Failed to generate MAC addresses'], 500);
-                }
 
-                // Re-check database to prevent race conditions
-                $existingMacs = MacAddress::whereIn('mac_address', $macAddresses)->pluck('mac_address')->toArray();
-                $availableMacs = array_diff($macAddresses, $existingMacs);
+                // Check if any of these MACs already exist in the database
+                $existingMacs = MacAddress::whereIn('mac_address', $macAddresses)->exists();
+            } while ($existingMacs); // If any exist, regenerate
 
-                if (empty($availableMacs)) {
-                    DB::rollBack();
-                    return response()->json(['message' => 'No available MAC addresses in the generated sequence'], 409);
-                }
-
-                $batchId = uniqid('batch_', true);
-
-                foreach ($availableMacs as $mac) {
-                    MacAddress::create([
-                        'mac_address' => $mac,
-                        'batchid' => $batchId,
-                        'assigned' => false,
-                    ]);
-                }
-
-                DB::commit();
-                return response()->json([
-                    'base_mac' => $availableMacs[0],
-                    'batch_id' => $batchId,
-                ], 200);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json(['message' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
-            }
+            return response()->json([
+                'base_mac' => $macAddresses[0],
+                'macs' => $macAddresses,
+            ], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation failed', 'details' => $e->errors()], 422);
         } catch (\Exception $e) {
             return response()->json(['message' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
         }
-    }
-
-
-    // Function to generate sequential MAC addresses
-    private function generateSequentialMacs($startMac, $count)
-    {
-        $macs = [];
-        $base = hexdec(str_replace(':', '', $startMac));
-
-        for ($i = 0; $i < $count; $i++) {
-            // Generate new MAC and ensure proper formatting
-            $newMac = strtoupper(implode(':', str_split(str_pad(dechex($base + $i), 12, '0', STR_PAD_LEFT), 2)));
-            $macs[] = $newMac;
-        }
-
-        return $macs;
-    }
-
-    // Function to increment MAC address by 1
-    private function incrementMac($mac)
-    {
-        $macHex = str_replace(':', '', $mac);
-        $newMacHex = str_pad(dechex(hexdec($macHex) + 1), 12, '0', STR_PAD_LEFT);
-        return strtoupper(implode(':', str_split($newMacHex, 2)));
     }
 
     /**
@@ -238,9 +164,9 @@ class macPrefixesController extends Controller
     {
         try {
             $request->validate([
-                'batch_id' => 'required|string',
                 'serial_number' => 'required|string',
                 'router_model' => 'required|int',
+                'base_mac' => ['required', 'regex:/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/'], // Expect only base MAC
             ]);
 
             $costPerBatch = 1;
@@ -252,35 +178,35 @@ class macPrefixesController extends Controller
                 return response()->json(['message' => 'Unauthorized.'], 401);
             }
 
-            // Find MACs by batch ID
-            $macsToAssign = MacAddress::where('batchid', $request->batch_id)
-                ->where('assigned', false)
-                ->get();
-
-            if ($macsToAssign->isEmpty()) {
-                return response()->json(['message' => 'No unassigned MACs found for this batch.'], 404);
-            }
-
-            // Check if credit exists
+            // Check credit balance
             $credit = Credit::first();
             if (!$credit || $credit->balance < $costPerBatch) {
-                return response()->json(['message' => 'Insufficient credits to perform this operation.'], 400);
+                return response()->json(['message' => 'Insufficient credits.'], 400);
             }
+
+            // Generate all 8 MAC addresses starting from base MAC
+            $macAddresses = $this->generateSequentialMacs($request->base_mac, 8);
+
+            // Create batch ID (not storing in DB yet)
+            $batchId = uniqid('batch_', true);
 
             DB::beginTransaction();
             try {
-                // Mark MACs as assigned
-                foreach ($macsToAssign as $mac) {
-                    $mac->assigned = true;
-                    $mac->save();
+                // Store MACs in DB
+                foreach ($macAddresses as $mac) {
+                    MacAddress::create([
+                        'mac_address' => $mac,
+                        'batchid' => $batchId,
+                        'assigned' => true,
+                    ]);
                 }
 
-                // Store configured router with the user ID
-                configuredRouters::create([
+                // Store configured router
+                ConfiguredRouters::create([
                     'router_model' => $request->router_model,
                     'serial_number' => $request->serial_number,
-                    'mac_batch' => $request->batch_id,
-                    'configured_by' => $user->id, // Track user who did the configuration
+                    'mac_batch' => $batchId,
+                    'configured_by' => $user->id,
                 ]);
 
                 // Deduct credits
@@ -309,5 +235,38 @@ class macPrefixesController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    // Function to generate sequential MAC addresses
+    private function generateSequentialMacs($startMac, $count)
+    {
+        $macs = [];
+        $base = hexdec(str_replace(':', '', $startMac));
+
+        for ($i = 0; $i < $count; $i++) {
+            // Generate new MAC and ensure proper formatting
+            $newMac = strtoupper(implode(':', str_split(str_pad(dechex($base + $i), 12, '0', STR_PAD_LEFT), 2)));
+            $macs[] = $newMac;
+        }
+
+        return $macs;
+    }
+
+    private function generateRandomMac($prefix)
+    {
+        // Generate a random 6-character suffix (last 3 octets)
+        $randomHex = strtoupper(str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT));
+
+        // Format as a MAC address
+        return "$prefix:" . implode(':', str_split($randomHex, 2));
+    }
+
+    // Function to increment MAC address by 1
+    private function incrementMac($mac)
+    {
+        $macHex = str_replace(':', '', $mac);
+        $newMacHex = str_pad(dechex(hexdec($macHex) + 1), 12, '0', STR_PAD_LEFT);
+        return strtoupper(implode(':', str_split($newMacHex, 2)));
     }
 }

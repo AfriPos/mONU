@@ -34,6 +34,7 @@ Route::middleware('api')->group(function () {
         Route::post('/mac-prefixes', [macPrefixesController::class, 'getMacPrefixes']);
         // fetch base mac
         Route::post('/base-mac', [macPrefixesController::class, 'getBaseMac']);
+        Route::post('/base-mac/cancel', [macPrefixesController::class, 'cancelBaseMac']);
         // assign mac addresses from batch
         Route::post('/config-success', [macPrefixesController::class, 'configSuccess']);
 
