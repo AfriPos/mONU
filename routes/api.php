@@ -35,7 +35,7 @@ Route::middleware('api')->group(function () {
         // fetch base mac
         Route::post('/base-mac', [macPrefixesController::class, 'getBaseMac']);
         // assign mac addresses from batch
-        Route::post('/config-success', [macPrefixesController::class, 'assignMacAddresses']);
+        Route::post('/config-success', [macPrefixesController::class, 'configSuccess']);
 
 
 
