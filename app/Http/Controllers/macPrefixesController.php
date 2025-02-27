@@ -115,6 +115,7 @@ class macPrefixesController extends Controller
     /**
      * Get base MAC
      */
+
     public function getBaseMac(Request $request)
     {
         try {
@@ -128,43 +129,37 @@ class macPrefixesController extends Controller
             }
 
             $costPerBatch = 1;
-
-            // Check credit balance
             if ($credit->balance < $costPerBatch) {
                 return response()->json(['message' => 'Insufficient credits'], 403);
             }
 
             $prefix = strtoupper($request->prefix);
 
-            DB::beginTransaction(); // Start transaction to prevent race conditions
+            DB::beginTransaction();
             try {
-                // **Step 1: Select and Lock an Available Batch**
-                $unassignedBatch = MacAddress::where('mac_address', 'LIKE', "$prefix%")
+                // **Step 1: Lock the batch search to prevent race conditions**
+                $unassignedBatchId = DB::table('mac_addresses')
+                    ->select('batchid')
+                    ->where('mac_address', 'LIKE', "$prefix%")
                     ->where('assigned', false)
-                    ->whereNotIn('batchid', function ($query) {
-                        $query->select('mac_batch')->from('configured_routers'); // Skip batches already being configured
-                    })
                     ->groupBy('batchid')
-                    ->havingRaw('COUNT(*) = 8') // Ensure all 8 MACs are available
-                    ->lockForUpdate() // Lock the batch to prevent others from selecting it
-                    ->first();
+                    ->havingRaw('COUNT(*) = 8')
+                    ->lockForUpdate() // This prevents other transactions from modifying this batch
+                    ->value('batchid');
 
-                if ($unassignedBatch) {
-                    // Mark the batch as assigned before releasing lock
-                    MacAddress::where('batchid', $unassignedBatch->batchid)->update(['assigned' => true]);
-
-                    $firstMac = MacAddress::where('batchid', $unassignedBatch->batchid)
+                if ($unassignedBatchId) {
+                    $firstMac = MacAddress::where('batchid', $unassignedBatchId)
                         ->orderBy('mac_address', 'asc')
                         ->first();
 
-                    DB::commit(); // Release lock after assignment
+                    DB::commit();
                     return response()->json([
                         'base_mac' => $firstMac->mac_address,
-                        'batch_id' => $unassignedBatch->batchid,
+                        'batch_id' => $unassignedBatchId,
                     ], 200);
                 }
 
-                // **Step 2: Generate a New Batch if No Available Batches Exist**
+                // **Step 2: If no unassigned batch, generate a new one**
                 $lastMac = MacAddress::where('mac_address', 'LIKE', "$prefix%")
                     ->orderBy('mac_address', 'desc')
                     ->first();
@@ -177,7 +172,7 @@ class macPrefixesController extends Controller
                     return response()->json(['message' => 'Failed to generate MAC addresses'], 500);
                 }
 
-                // Ensure generated MACs are not already assigned
+                // Re-check database to prevent race conditions
                 $existingMacs = MacAddress::whereIn('mac_address', $macAddresses)->pluck('mac_address')->toArray();
                 $availableMacs = array_diff($macAddresses, $existingMacs);
 
@@ -186,30 +181,29 @@ class macPrefixesController extends Controller
                     return response()->json(['message' => 'No available MAC addresses in the generated sequence'], 409);
                 }
 
-                // Create a batch ID
                 $batchId = uniqid('batch_', true);
 
-                // Store new MACs
                 foreach ($availableMacs as $mac) {
                     MacAddress::create([
                         'mac_address' => $mac,
                         'batchid' => $batchId,
-                        'assigned' => true, // Mark as assigned immediately
+                        'assigned' => false,
                     ]);
                 }
 
-                DB::commit(); // Release lock
-
+                DB::commit();
                 return response()->json([
-                    'base_mac' => $availableMacs[0], // Return first MAC in batch
+                    'base_mac' => $availableMacs[0],
                     'batch_id' => $batchId,
                 ], 200);
             } catch (\Exception $e) {
-                DB::rollBack(); // Rollback transaction on failure
+                DB::rollBack();
                 return response()->json(['message' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['message' => 'Validation failed', 'details' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'An unexpected error occurred: ' . $e->getMessage()], 500);
         }
     }
 
@@ -239,7 +233,8 @@ class macPrefixesController extends Controller
 
     /**
      * Assign MAC addresses to a batch
-     */ public function configSuccess(Request $request)
+     */
+    public function configSuccess(Request $request)
     {
         try {
             $request->validate([
@@ -250,8 +245,17 @@ class macPrefixesController extends Controller
 
             $costPerBatch = 1;
 
+            // Get authenticated user
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json(['message' => 'Unauthorized.'], 401);
+            }
+
             // Find MACs by batch ID
-            $macsToAssign = MacAddress::where('batchid', $request->batch_id)->where('assigned', false)->get();
+            $macsToAssign = MacAddress::where('batchid', $request->batch_id)
+                ->where('assigned', false)
+                ->get();
 
             if ($macsToAssign->isEmpty()) {
                 return response()->json(['message' => 'No unassigned MACs found for this batch.'], 404);
@@ -265,17 +269,18 @@ class macPrefixesController extends Controller
 
             DB::beginTransaction();
             try {
-                // Update them as assigned
+                // Mark MACs as assigned
                 foreach ($macsToAssign as $mac) {
                     $mac->assigned = true;
                     $mac->save();
                 }
 
-                // update configured routers
-                ConfiguredRouters::create([
+                // Store configured router with the user ID
+                configuredRouters::create([
                     'router_model' => $request->router_model,
                     'serial_number' => $request->serial_number,
-                    'mac_batch' => $request->batch_id
+                    'mac_batch' => $request->batch_id,
+                    'configured_by' => $user->id, // Track user who did the configuration
                 ]);
 
                 // Deduct credits
@@ -284,12 +289,13 @@ class macPrefixesController extends Controller
                 DB::commit();
 
                 return response()->json([
-                    'message' => 'MAC addresses assigned successfully.'
+                    'message' => 'MAC addresses assigned successfully.',
                 ], 200);
             } catch (\Exception $e) {
                 DB::rollback();
                 return response()->json([
                     'message' => 'Failed to assign MAC addresses.',
+                    'error' => $e->getMessage(),
                 ], 500);
             }
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -300,6 +306,7 @@ class macPrefixesController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'An unexpected error occurred',
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
