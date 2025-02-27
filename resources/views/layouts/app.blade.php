@@ -8,7 +8,7 @@
 
     <title>{{ config('app.name', 'mONU') }}</title>
 
-    
+
     <link rel="icon" type="image/png"
         href="{{ asset('https://raw.afripos.co.ke/afripos-logo-files/favicon/webp/afripos-favicon-color.webp') }}">
 
@@ -22,6 +22,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
     </script>
+
+    {{-- sweeet alerts --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script
         src="https://www.paypal.com/sdk/js?client-id=Af-MUiyjW9p1k8e8xQWYMwSk_xZItfk40NGfJ2rV8VMnD5ww0KyoCQBANE_JnIyxx7y5Acu53JodoI9f&buyer-country=US&currency=USD&components=buttons&enable-funding=venmo,paylater,card&locale=en_KE"

@@ -23,7 +23,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view roles',
             'create roles',
             'edit roles',
-            'update roles',
+            'delete roles',
             'view router models',
             'view routers',
             'view router configurations',

@@ -18,7 +18,8 @@ class rolesController extends Controller
      */
     public function index()
     {
-        $roles = Role::where('name', '!=', 'Developer')->get();
+        // $roles = Role::where('name', '!=', 'Developer')->get();
+        $roles = Role::all();
         return view('roles.index', compact('roles'));
     }
 
@@ -100,6 +101,11 @@ class rolesController extends Controller
     public function destroy(Role $role)
     {
         if ($role->name !== 'Developer') {
+            // Check if there are users with this role
+            if ($role->users()->count() > 0) {
+                return redirect()->route('roles.index')->with('error', 'Cannot delete role. There are users assigned this role. Please change their roles first.');
+            }
+            
             $role->delete();
             return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
         }

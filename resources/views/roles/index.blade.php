@@ -12,7 +12,7 @@
                             {{ __('Add Role') }}
                         </a>
                     </header>
-                    
+
                     @if ($errors->any())
                         <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
                             <ul class="list-disc list-inside">
@@ -23,11 +23,18 @@
                         </div>
                     @endif
 
+                    @if (session('error'))
+                        <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @if (session('success'))
                         <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
                             {{ session('success') }}
                         </div>
                     @endif
+
 
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -65,14 +72,36 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <a href="{{ route('roles.edit', $role) }}"
                                             class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                                        <form class="inline-block" action="{{ route('roles.destroy', $role) }}"
-                                            method="POST" onsubmit="return confirm('Are you sure?');">
+
+                                        <form id="delete-form-{{ $role->id }}" class="inline-block"
+                                            action="{{ route('roles.destroy', $role) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit"
-                                                class="ml-2 text-red-600 hover:text-red-900">Delete</button>
+                                            <button type="button" onclick="confirmDelete({{ $role->id }})"
+                                                class="ml-2 text-red-600 hover:text-red-900">
+                                                Delete
+                                            </button>
                                         </form>
                                     </td>
+
+                                    <script>
+                                        function confirmDelete(roleId) {
+                                            Swal.fire({
+                                                title: "Are you sure?",
+                                                text: "This action cannot be undone!",
+                                                icon: "warning",
+                                                showCancelButton: true,
+                                                confirmButtonColor: "#d33",
+                                                cancelButtonColor: "#3085d6",
+                                                confirmButtonText: "Yes, delete it!"
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById('delete-form-' + roleId).submit();
+                                                }
+                                            });
+                                        }
+                                    </script>
+
                                 </tr>
                             @endforeach
                         </tbody>

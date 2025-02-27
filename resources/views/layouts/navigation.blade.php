@@ -16,33 +16,41 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index', 'users.create', 'users.edit', 'users.show')">
-                        {{ __('Users') }}
-                    </x-nav-link>
-                </div>
-                @can('update roles')
+                @can('view users')
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index', 'users.create', 'users.edit', 'users.show')">
+                            {{ __('Users') }}
+                        </x-nav-link>
+                    </div>
+                @endcan
+                @can('edit roles')
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                         <x-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.index', 'roles.edit')">
                             {{ __('Roles') }}
                         </x-nav-link>
                     </div>
                 @endcan
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('routers.index')" :active="request()->routeIs('routers.index')">
-                        {{ __('Routers') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.index')">
-                        {{ __('Transactions') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('mac.index')" :active="request()->routeIs('mac.index')">
-                        {{ __('MAC management') }}
-                    </x-nav-link>
-                </div>
+                @can('view routers')
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('routers.index')" :active="request()->routeIs('routers.index')">
+                            {{ __('Routers') }}
+                        </x-nav-link>
+                    </div>
+                @endcan
+                @can('view finance')
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.index')">
+                            {{ __('Transactions') }}
+                        </x-nav-link>
+                    </div>
+                @endcan
+                @can('view mac prefixes')
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('mac.index')" :active="request()->routeIs('mac.index')">
+                            {{ __('MAC management') }}
+                        </x-nav-link>
+                    </div>
+                @endcan
             </div>
 
             <!-- Settings Dropdown -->
