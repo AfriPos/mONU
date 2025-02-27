@@ -46,6 +46,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('router_configurations');
+        Schema::dropIfExists('issue_types');
         Schema::dropIfExists('router_models');
     }
 };
