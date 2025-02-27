@@ -15,10 +15,11 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        // User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        User::factory()->create([
+            'name' => 'Developer',
+            'email' => 'dev@afripos.co.ke',
+            'password' => bcrypt('Developer@10000!'),
+        ]);
 
         // add credit record
         \App\Models\Credit::create([
