@@ -19,6 +19,12 @@
                         </div>
                     @endif
 
+                    @if (session('error'))
+                        <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
                     @if (session('success'))
                         <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
                             {{ session('success') }}
@@ -28,13 +34,16 @@
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Router Model
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Serial Number
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     MAC Batch
                                 </th>
                             </tr>
@@ -43,7 +52,8 @@
                             @foreach ($routers as $router)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">{{ $router->routerModel->brand }} {{ $router->routerModel->model_name }}</div>
+                                        <div class="text-sm text-gray-900">{{ $router->routerModel->brand }}
+                                            {{ $router->routerModel->model_name }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">{{ $router->serial_number }}</div>

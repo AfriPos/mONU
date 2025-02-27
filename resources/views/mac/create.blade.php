@@ -1,4 +1,3 @@
-
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -13,6 +12,28 @@
                     <form method="POST" action="{{ route('mac.store') }}" class="space-y-6">
                         @csrf
 
+                        @if ($errors->any())
+                            <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                                <ul class="list-disc list-inside">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if (session('error'))
+                            <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
+                        @if (session('success'))
+                            <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+                        
                         <div>
                             <x-input-label for="prefix" :value="__('MAC Prefix')" />
                             <x-text-input id="prefix" class="block mt-1 w-full" type="text" name="prefix"

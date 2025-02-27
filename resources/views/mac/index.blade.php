@@ -13,9 +13,25 @@
                         </a>
                     </header>
 
-                    @if (session('status'))
-                        <div class="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded" role="alert">
-                            {{ session('status') }}
+                    @if ($errors->any())
+                        <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                            <ul class="list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
+
+                    @if (session('success'))
+                        <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
+                            {{ session('success') }}
                         </div>
                     @endif
 
@@ -58,24 +74,62 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         @if ($mac->status)
-                                            <form action="{{ route('mac.deactivate', $mac->id) }}" method="POST"
+                                            <form id="deactivate-form-{{ $mac->id }}"
+                                                action="{{ route('mac.deactivate', $mac->id) }}" method="POST"
                                                 class="inline">
                                                 @csrf
-                                                <button type="submit" class="text-red-600 hover:text-red-900"
-                                                    onclick="return confirm('Are you sure?')">
+                                                <button type="button" class="text-red-600 hover:text-red-900"
+                                                    onclick="confirmDeactivation({{ $mac->id }})">
                                                     Deactivate
                                                 </button>
                                             </form>
                                         @else
-                                            <form action="{{ route('mac.activate', $mac->id) }}" method="POST"
+                                            <form id="activate-form-{{ $mac->id }}"
+                                                action="{{ route('mac.activate', $mac->id) }}" method="POST"
                                                 class="inline">
                                                 @csrf
-                                                <button type="submit" class="text-green-600 hover:text-green-900">
+                                                <button type="button" class="text-green-600 hover:text-green-900"
+                                                    onclick="confirmActivation({{ $mac->id }})">
                                                     Activate
                                                 </button>
                                             </form>
                                         @endif
                                     </td>
+
+                                    <script>
+                                        function confirmDeactivation(macId) {
+                                            Swal.fire({
+                                                title: "Are you sure?",
+                                                text: "This will deactivate the MAC address.",
+                                                icon: "warning",
+                                                showCancelButton: true,
+                                                confirmButtonColor: "#d33",
+                                                cancelButtonColor: "#3085d6",
+                                                confirmButtonText: "Yes, deactivate it!"
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById('deactivate-form-' + macId).submit();
+                                                }
+                                            });
+                                        }
+
+                                        function confirmActivation(macId) {
+                                            Swal.fire({
+                                                title: "Activate MAC Address?",
+                                                text: "This will activate the MAC address.",
+                                                icon: "info",
+                                                showCancelButton: true,
+                                                confirmButtonColor: "#28a745",
+                                                cancelButtonColor: "#6c757d",
+                                                confirmButtonText: "Yes, activate it!"
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById('activate-form-' + macId).submit();
+                                                }
+                                            });
+                                        }
+                                    </script>
+
                                 </tr>
                             @endforeach
                         </tbody>

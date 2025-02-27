@@ -18,8 +18,8 @@ class rolesController extends Controller
      */
     public function index()
     {
-        $roles = Role::where('name', '!=', 'Developer')->get();
-        // $roles = Role::all();
+        // $roles = Role::where('name', '!=', 'Developer')->get();
+        $roles = Role::all();
         return view('roles.index', compact('roles'));
     }
 

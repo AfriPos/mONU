@@ -23,12 +23,18 @@
                             </div>
                         @endif
 
+                        @if (session('error'))
+                            <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
                         @if (session('success'))
                             <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
                                 {{ session('success') }}
                             </div>
                         @endif
-
+                        
                         <div>
                             <x-input-label for="name" :value="__('Name')" />
                             <x-text-input id="name" class="block mt-1 w-full" type="text" name="name"

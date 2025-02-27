@@ -54,7 +54,11 @@
                 let amount = document.getElementById("amount").value;
 
                 if (!amount || isNaN(amount) || amount <= 0) {
-                    alert("Please enter a valid amount.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Please enter a valid amount!',
+                    });
                     return;
                 }
 
@@ -83,10 +87,18 @@
                 const orderData = await response.json();
 
                 if (orderData.status === "COMPLETED") {
-                    alert(`Transaction Successful! ID: ${orderData.id}`);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: `Transaction Successful! ID: ${orderData.id}`,
+                    });
                     window.location.reload();
                 } else {
-                    alert("Transaction failed. Please try again.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'Transaction failed. Please try again.',
+                    });
                 }
             },
         })

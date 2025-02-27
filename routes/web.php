@@ -34,10 +34,10 @@ Route::middleware('auth')->group(function () {
     // mac management router
     Route::get('/mac-prefixes', [macPrefixesController::class, 'index'])->name('mac.index')->middleware('permission:view mac prefixes');
     Route::get('/mac-prefixes/create', [macPrefixesController::class, 'create'])->name('mac.create')->middleware('permission:create mac prefixes');
-    Route::post('/mac-prefixes', [macPrefixesController::class, 'store'])->name('mac.store')->middleware('permission:view create prefixes');
+    Route::post('/mac-prefixes', [macPrefixesController::class, 'store'])->name('mac.store')->middleware('permission:create mac prefixes');
     Route::get('/mac-prefixes/{macPrefixesModel}', [macPrefixesController::class, 'show'])->name('mac.show')->middleware('permission:view mac prefixes');
     Route::post('/mac-prefixes/{macPrefixesModel}/deactivate', [macPrefixesController::class, 'deactivate'])->name('mac.deactivate')->middleware('permission:deactivate mac prefixes');
-    Route::post('/mac-prefixes/{macPrefixesModel}/activate', [macPrefixesController::class, 'activate'])->name('mac.activate')->middleware('permission:avticate mac prefixes');
+    Route::post('/mac-prefixes/{macPrefixesModel}/activate', [macPrefixesController::class, 'activate'])->name('mac.activate')->middleware('permission:activate mac prefixes');
 
     // roles routes
     Route::get('/roles', [rolesController::class, 'index'])->name('roles.index')->middleware('permission:view roles');

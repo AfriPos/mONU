@@ -22,6 +22,12 @@
                             </div>
                         @endif
 
+                        @if (session('error'))
+                            <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
                         @if (session('success'))
                             <div class="mb-4 bg-green-50 border border-green-200 text-sm text-green-600 rounded-md p-4">
                                 {{ session('success') }}
@@ -44,9 +50,10 @@
 
                         <div>
                             <x-input-label for="role" :value="__('Role')" />
-                            <select id="role" name="role" class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
+                            <select id="role" name="role"
+                                class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="" selected disabled>Select Role</option>
-                                @foreach($roles as $role)
+                                @foreach ($roles as $role)
                                     <option value="{{ $role->id }}">
                                         {{ $role->name }}
                                     </option>

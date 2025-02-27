@@ -13,7 +13,6 @@
                         </a>
                     </header>
 
-
                     @if ($errors->any())
                         <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
                             <ul class="list-disc list-inside">
@@ -21,6 +20,12 @@
                                     <li>{{ $error }}</li>
                                 @endforeach
                             </ul>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="mb-4 bg-red-50 border border-red-200 text-sm text-red-600 rounded-md p-4">
+                            {{ session('error') }}
                         </div>
                     @endif
 
@@ -68,14 +73,35 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <a href="{{ route('users.edit', $user->id) }}"
                                             class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                        <form action="{{ route('users.destroy', $user->id) }}" method="POST"
+
+                                        <form id="delete-form-{{ $user->id }}"
+                                            action="{{ route('users.destroy', $user->id) }}" method="POST"
                                             class="inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900"
-                                                onclick="return confirm('Are you sure you want to delete this user?')">Delete</button>
+                                            <button type="button" onclick="confirmDelete({{ $user->id }})"
+                                                class="text-red-600 hover:text-red-900">Delete</button>
                                         </form>
                                     </td>
+
+                                    <script>
+                                        function confirmDelete(userId) {
+                                            Swal.fire({
+                                                title: "Are you sure?",
+                                                text: "This action cannot be undone!",
+                                                icon: "warning",
+                                                showCancelButton: true,
+                                                confirmButtonColor: "#d33",
+                                                cancelButtonColor: "#3085d6",
+                                                confirmButtonText: "Yes, delete it!"
+                                            }).then((result) => {
+                                                if (result.isConfirmed) {
+                                                    document.getElementById('delete-form-' + userId).submit();
+                                                }
+                                            });
+                                        }
+                                    </script>
+
                                 </tr>
                             @endforeach
                         </tbody>
