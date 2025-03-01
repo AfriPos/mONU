@@ -15,7 +15,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard')->middleware('permission:view finance');
 
 Route::middleware('auth')->group(function () {
     // profile routes
