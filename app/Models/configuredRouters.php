@@ -17,4 +17,9 @@ class configuredRouters extends Model
     {
         return $this->belongsTo(User::class, 'configured_by');
     }
+
+    public function macAddress()
+    {
+        return $this->hasOne(MacAddress::class, 'batchid', 'mac_batch')->where('assigned', true);
+    }    
 }
