@@ -30,7 +30,17 @@
                             {{ session('success') }}
                         </div>
                     @endif
-
+                    <form method="GET" action="{{ route('routers.index') }}" class="mb-4">
+                        <div class="flex">
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                class="border border-gray-300 rounded-l-md px-4 py-2 w-full"
+                                placeholder="Search by serial number...">
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-r-md">
+                                Search
+                            </button>
+                        </div>
+                    </form>
+                    
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -74,6 +84,9 @@
                             @endforeach
                         </tbody>
                     </table>
+                    <div class="mt-4">
+                        {{ $routers->appends(request()->query())->links() }}
+                    </div>                    
                 </div>
             </div>
         </div>

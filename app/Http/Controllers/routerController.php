@@ -14,9 +14,22 @@ class routerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+
+    public function index(Request $request)
     {
-        $routers = configuredRouters::all();
+        $query = configuredRouters::query();
+
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->whereHas('routerModel', function ($q) use ($search) {
+                $q->where('brand', 'like', "%$search%")
+                    ->orWhere('model_name', 'like', "%$search%");
+            })
+                ->orWhere('serial_number', 'like', "%$search%");
+        }
+
+        $routers = $query->with(['routerModel', 'user'])->paginate(10);
+
         return view('routers.index', compact('routers'));
     }
 

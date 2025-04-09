@@ -18,6 +18,8 @@ Route::middleware('api')->group(function () {
 
     Route::post('/orders', [PayPalController::class, 'createOrder']);
     Route::post('/orders/{orderId}/capture', [PayPalController::class, 'captureOrder']);
+        // fetch base mac
+        Route::post('/base-mac', [macPrefixesController::class, 'getBaseMac']);
     
     // Protected routes (for authenticated users)
     Route::middleware('auth:sanctum')->group(function () {
@@ -32,8 +34,6 @@ Route::middleware('api')->group(function () {
 
         // fetch mac prefixes
         Route::post('/mac-prefixes', [macPrefixesController::class, 'getMacPrefixes']);
-        // fetch base mac
-        Route::post('/base-mac', [macPrefixesController::class, 'getBaseMac']);
         Route::post('/base-mac/cancel', [macPrefixesController::class, 'cancelBaseMac']);
         // assign mac addresses from batch
         Route::post('/config-success', [macPrefixesController::class, 'configSuccess']);
